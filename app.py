@@ -16,13 +16,13 @@ except Exception as e:
     print(f"Error initializing Gemini client: {e}")
     client = None
 
-# --- Gemini Prompt (No change needed, cleanup handles the structure) ---
+# --- Gemini Prompt (Numbers removed for cleaner output) ---
 GALL_ANALYSIS_PROMPT = """
 Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathology expert.
 
-1.  **Identify Growths:** Determine if there are any abnormal growths, tumors, or distorted tissue present, specifically looking for Crown Gall (Agrobacterium tumefaciens).
-2.  **Describe Findings:** Describe the visual evidence found. If no gall is present, describe the healthy appearance.
-3.  **Provide a Verdict:** Give a clear, concise final verdict.
+**Identify Growths:** Determine if there are any abnormal growths, tumors, or distorted tissue present, specifically looking for Crown Gall (Agrobacterium tumefaciens).
+**Describe Findings:** Describe the visual evidence found. If no gall is present, describe the healthy appearance.
+**Provide a Verdict:** Give a clear, concise final verdict.
 
 Crucially, format your final verdict on a single line using ONLY this exact structure: [VERDICT: Gall Present / Gall Not Present] [CONFIDENCE: X%]
 """
@@ -107,14 +107,19 @@ def analyze_tuber():
         # 3. Remove verdict and surrounding newlines from the rest of the text
         clean_analysis = re.sub(r'\[VERDICT:.*?\]\s*\[CONFIDENCE:.*?%\]', '', analysis_text, flags=re.DOTALL).strip()
         
-        # 4. Remove all numbered list markers and headings (1. **, 2. **, 3. **, etc.)
+        # 4. Remove the old numbered list markers and headings (1. **, 2. **, 3. **, etc.)
+        # This step is kept as a safeguard in case the model occasionally reverts to the old format
         clean_analysis = re.sub(r'^\d+\.\s+\*\*.*?\*\*:\s*', '', clean_analysis, flags=re.MULTILINE).strip()
         
-        # 5. Use double newlines to separate sections clearly and collapse multiple newlines/spaces
+        # 5. Remove the new bolded headings used in the prompt (e.g., "**Identify Growths:**")
+        # This simplifies the final explanation text even further.
+        clean_analysis = re.sub(r'\*\*(.*?)\*\*:\s*', '', clean_analysis, flags=re.MULTILINE).strip()
+        
+        # 6. Use double newlines to separate sections clearly and collapse multiple newlines/spaces
         # This creates distinct paragraphs for the new HTML structure
         clean_analysis = re.sub(r'\n+', '\n\n', clean_analysis).strip()
         
-        # 6. Combine verdict and cleaned analysis with a unique separator for Jinja to split
+        # 7. Combine verdict and cleaned analysis with a unique separator for Jinja to split
         final_result = f"{verdict_line}---SEPARATOR---{clean_analysis}"
         
         # --- END RESPONSE CLEANUP AND FORMATTING ---
