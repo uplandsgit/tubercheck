@@ -1,5 +1,4 @@
-import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for
 from google import genai
 from PIL import Image
 import io
@@ -16,13 +15,13 @@ except Exception as e:
     print(f"Error initializing Gemini client: {e}")
     client = None
 
-# --- Gemini Prompt (Numbers removed for cleaner output) ---
+# --- Gemini Prompt (Removed 'Provide a Verdict:' from the bolded list) ---
 GALL_ANALYSIS_PROMPT = """
-Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathology expert.
+Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathology expert. 
+Your response must consist only of the analysis and the final verdict line.
 
 **Identify Growths:** Determine if there are any abnormal growths, tumors, or distorted tissue present, specifically looking for Crown Gall (Agrobacterium tumefaciens).
 **Describe Findings:** Describe the visual evidence found. If no gall is present, describe the healthy appearance.
-**Provide a Verdict:** Give a clear, concise final verdict.
 
 Crucially, format your final verdict on a single line using ONLY this exact structure: [VERDICT: Gall Present / Gall Not Present] [CONFIDENCE: X%]
 """
@@ -107,16 +106,17 @@ def analyze_tuber():
         # 3. Remove verdict and surrounding newlines from the rest of the text
         clean_analysis = re.sub(r'\[VERDICT:.*?\]\s*\[CONFIDENCE:.*?%\]', '', analysis_text, flags=re.DOTALL).strip()
         
-        # 4. Remove the old numbered list markers and headings (1. **, 2. **, 3. **, etc.)
-        # This step is kept as a safeguard in case the model occasionally reverts to the old format
+        # 4. Remove the old numbered list markers and headings (1. **, 2. **, 3. **, etc.) - Safeguard
         clean_analysis = re.sub(r'^\d+\.\s+\*\*.*?\*\*:\s*', '', clean_analysis, flags=re.MULTILINE).strip()
         
-        # 5. Remove the new bolded headings used in the prompt (e.g., "**Identify Growths:**")
-        # This simplifies the final explanation text even further.
-        clean_analysis = re.sub(r'\*\*(.*?)\*\*:\s*', '', clean_analysis, flags=re.MULTILINE).strip()
+        # 5. CONVERT BOLDED HEADINGS TO H4 TAGS, but exclude "Provide a Verdict"
+        # 5a. Remove the unwanted "Provide a Verdict:" header completely if it appears.
+        clean_analysis = re.sub(r'\*\*Provide a Verdict\*\*:\s*', '', clean_analysis, flags=re.MULTILINE).strip()
+        
+        # 5b. Convert all remaining bolded headers (Identify Growths, Describe Findings) to H4 tags for styling
+        clean_analysis = re.sub(r'\*\*(.*?)\*\*:\s*', r'<h4>\1</h4>\n', clean_analysis, flags=re.MULTILINE).strip()
         
         # 6. Use double newlines to separate sections clearly and collapse multiple newlines/spaces
-        # This creates distinct paragraphs for the new HTML structure
         clean_analysis = re.sub(r'\n+', '\n\n', clean_analysis).strip()
         
         # 7. Combine verdict and cleaned analysis with a unique separator for Jinja to split
