@@ -12,11 +12,24 @@
         <hr>
 
         <section class="ai-verdict">
-            <h2>AI Diagnostic Verdict</h2>
-            <p>The AI performed a visual inspection. Check the confidence score carefully.</p>
+            <!-- Use Jinja to split the single result string into two parts based on the separator added in app.py -->
+            {% set parts = result.split('---SEPARATOR---') %}
+            {% set verdict_line = parts[0] if parts|length > 0 else 'Error: Verdict Missing' %}
+            {% set explanation_text = parts[1] if parts|length > 1 else 'Detailed analysis could not be retrieved. Check logs for API errors.' %}
             
-            <!-- This filter highlights the confidence score using the CSS -->
-            <pre class="ai-output">{{ result | replace('[CONFIDENCE', '<strong>[CONFIDENCE') | replace('%]', '%]</strong>') }}</pre>
+            <!-- VERDICT DISPLAY (Prominent Box at the top) -->
+            <div class="verdict-box">
+                <h2>Diagnostic Verdict</h2>
+                <!-- Apply filter to highlight confidence score within the verdict box -->
+                <p>{{ verdict_line | replace('[CONFIDENCE', '<strong>[CONFIDENCE') | replace('%]', '%]</strong>') }}</p>
+            </div>
+
+            <!-- DETAILED EXPLANATION SECTION -->
+            <h2>Detailed Findings & Analysis</h2>
+            <p>The AI performed a visual inspection. Please check the confidence score and the findings below carefully.</p>
+            
+            <!-- Explanation Text (cleaned and formatted in app.py) -->
+            <div class="ai-output">{{ explanation_text }}</div>
 
             <p class="recommendation-note">
                 If the verdict is 'Gall Present' or the confidence is low (below 70%), proceed with caution and a physical inspection.
@@ -30,10 +43,6 @@
             <p>Compare the questionable areas on your tuber with this reference image showing definitive crown gall symptoms.</p>
             
             <div class="image-comparison">
-                <!-- 
-                  IMPORTANT: This will show a 404 image until you 
-                  add a file named 'gall_reference.jpg' to the 'static/images/' folder.
-                -->
                 <img src="{{ url_for('static', filename='images/gall_reference.jpg') }}" 
                      alt="Reference image showing definitive crown gall on a dahlia tuber" 
                      class="reference-image">

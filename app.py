@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from google import genai
 from PIL import Image
 import io
-import re # <-- New: Added import for regex
+import re
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -16,7 +16,7 @@ except Exception as e:
     print(f"Error initializing Gemini client: {e}")
     client = None
 
-# --- Gemini Prompt ---
+# --- Gemini Prompt (No change needed, cleanup handles the structure) ---
 GALL_ANALYSIS_PROMPT = """
 Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathology expert.
 
@@ -90,30 +90,37 @@ def analyze_tuber():
         
     # --- 2. Call the Gemini API ---
     try:
-        # FIX: Removed 'timeout=25' argument to fix the TypeError.
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=content
         )
         analysis_text = response.text
         
-        # --- START RESPONSE CLEANUP (New Logic) ---
-        # 1. Remove the bold HTML tags (the Jinja filter in results.html handles bolding)
+        # --- START RESPONSE CLEANUP AND FORMATTING ---
+        # 1. Remove the bold HTML tags (the Jinja filter handles bolding later)
         analysis_text = analysis_text.replace('<strong>', '').replace('</strong>', '')
 
-        # 2. Remove the structured headers/numbers/bolding from the prompt response
-        # This targets patterns like "1. **Identify Growths:** "
-        analysis_text = re.sub(r'^\d+\.\s+\*\*.*?\*\*:\s*', '', analysis_text, flags=re.MULTILINE)
-
-        # 3. Collapse all multiple spaces and newlines into a single clean paragraph, 
-        # then re-introduce a newline before the verdict for neat separation.
-        analysis_text = analysis_text.replace('\n', ' ').strip()
-        analysis_text = re.sub(r'\s+', ' ', analysis_text).strip()
-        analysis_text = analysis_text.replace('[VERDICT', '\n[VERDICT')
-        # --- END RESPONSE CLEANUP ---
+        # 2. Extract the verdict line separately.
+        verdict_match = re.search(r'\[VERDICT:.*?\]\s*\[CONFIDENCE:.*?%\]', analysis_text, re.DOTALL)
+        verdict_line = verdict_match.group(0).strip() if verdict_match else "[VERDICT: Error] [CONFIDENCE: 0%]"
+        
+        # 3. Remove verdict and surrounding newlines from the rest of the text
+        clean_analysis = re.sub(r'\[VERDICT:.*?\]\s*\[CONFIDENCE:.*?%\]', '', analysis_text, flags=re.DOTALL).strip()
+        
+        # 4. Remove all numbered list markers and headings (1. **, 2. **, 3. **, etc.)
+        clean_analysis = re.sub(r'^\d+\.\s+\*\*.*?\*\*:\s*', '', clean_analysis, flags=re.MULTILINE).strip()
+        
+        # 5. Use double newlines to separate sections clearly and collapse multiple newlines/spaces
+        # This creates distinct paragraphs for the new HTML structure
+        clean_analysis = re.sub(r'\n+', '\n\n', clean_analysis).strip()
+        
+        # 6. Combine verdict and cleaned analysis with a unique separator for Jinja to split
+        final_result = f"{verdict_line}---SEPARATOR---{clean_analysis}"
+        
+        # --- END RESPONSE CLEANUP AND FORMATTING ---
 
         # --- 3. Redirect to the results page ---
-        return redirect(url_for('results', analysis=analysis_text))
+        return redirect(url_for('results', analysis=final_result))
         
     except Exception as e:
         # Catch errors during the API call (network, timeout, quota)

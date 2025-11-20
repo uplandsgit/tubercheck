@@ -1,5 +1,5 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Updated Font Stack */
     background-color: #f4f7f6;
     color: #333;
     margin: 0;
@@ -107,24 +107,44 @@ input[type="file"] {
     background-color: #e8f8f8;
 }
 
-/* --- AI Output Styling (results.html) --- */
-.ai-output {
-    white-space: pre-wrap; /* Ensures the AI output wraps properly */
-    background-color: #e8f8f8; /* Light background for the verdict box */
-    border: 2px solid #008080;
+/* NEW: Prominent Verdict Box at the top */
+.verdict-box {
+    background-color: #e0f2f2; /* Light teal background */
+    border: 3px solid #008080;
     padding: 20px;
-    border-radius: 8px;
-    font-size: 1.1em;
-    text-align: left;
-    margin-bottom: 20px;
-    line-height: 1.5;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #004d4d;
+    text-align: center;
 }
 
-/* Highlight the Confidence Score */
-.ai-output strong {
+.verdict-box strong {
     color: #e65200; /* Distinct color for emphasis (e.g., orange/red) */
     font-weight: 900;
-    font-size: 1.2em;
+    font-size: 1.1em;
+}
+
+/* --- AI Output Styling (results.html) --- */
+.ai-output {
+    /* Used for the detailed explanation section */
+    background-color: #ffffff; 
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 1em;
+    text-align: left;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Keeps paragraphs separate */
+}
+
+/* We don't need this rule anymore as verdict is separate, but keeping for safety override */
+.ai-output strong {
+    font-weight: normal; 
+    color: inherit;
+    font-size: 1em;
 }
 
 /* --- Reference Image Styling --- */
