@@ -20,8 +20,9 @@
             <!-- VERDICT DISPLAY (Prominent Box at the top) -->
             <div class="verdict-box">
                 <h2>Diagnostic Verdict</h2>
-                <!-- Apply filter to highlight confidence score within the verdict box -->
-                <p>{{ verdict_line | replace('[CONFIDENCE', '<strong>[CONFIDENCE') | replace('%]', '%]</strong>') }}</p>
+                <!-- FIX: Added | safe filter. This prevents Jinja from escaping the <strong> tags, 
+                     allowing the browser to render them as HTML and show the bold confidence score. -->
+                <p>{{ verdict_line | replace('[CONFIDENCE', '<strong>[CONFIDENCE') | replace('%]', '%]</strong>') | safe }}</p>
             </div>
 
             <!-- DETAILED EXPLANATION SECTION -->
