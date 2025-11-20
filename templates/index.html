@@ -23,11 +23,37 @@
                 <input type="file" name="photos" id="photos" accept="image/*" multiple required>
             </div>
             
+            <!-- NEW: Area to display the selected file names -->
+            <div id="file-names-display" class="file-names-area">No file selected.</div>
+
             <button type="submit" class="button primary-button">Submit for AI Analysis</button>
         </form>
 
         <hr>
         <p class="disclaimer">Disclaimer: This tool provides an AI assessment. Always visually confirm the verdict.</p>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('photos');
+            const displayArea = document.getElementById('file-names-display');
+
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    let fileNames = Array.from(this.files).map(file => file.name);
+                    
+                    if (fileNames.length === 1) {
+                        displayArea.textContent = 'Selected: ' + fileNames[0];
+                    } else {
+                        displayArea.textContent = fileNames.length + ' files selected.';
+                    }
+                    displayArea.style.color = '#333'; // Change color to indicate selection
+                } else {
+                    displayArea.textContent = 'No file selected.';
+                    displayArea.style.color = '#777';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
