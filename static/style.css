@@ -1,0 +1,152 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 40px;
+    margin: 30px 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 700px;
+    width: 100%;
+    text-align: center;
+}
+
+h1 {
+    color: #008080;
+    font-size: 2.5em;
+    margin-bottom: 0.1em;
+}
+
+h2 {
+    color: #384047;
+    font-size: 1.5em;
+    margin-top: 0;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 30px 0;
+}
+
+/* --- Buttons and Links --- */
+.button, .upload-form a {
+    display: inline-block;
+    padding: 12px 25px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.primary-button {
+    background-color: #008080;
+    color: white;
+}
+
+.primary-button:hover {
+    background-color: #006666;
+    transform: translateY(-1px);
+}
+
+.secondary-button {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+.secondary-button:hover {
+    background-color: #e0e0e0;
+}
+
+/* --- File Input Styling --- */
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.file-input-group {
+    width: 100%;
+    max-width: 300px;
+}
+
+input[type="file"] {
+    display: none; /* Hide the default input */
+}
+
+.custom-file-upload {
+    border: 2px dashed #008080;
+    display: inline-block;
+    padding: 15px 30px;
+    cursor: pointer;
+    border-radius: 8px;
+    background-color: #f9ffff;
+    color: #008080;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.custom-file-upload:hover {
+    background-color: #e8f8f8;
+}
+
+/* --- AI Output Styling (results.html) --- */
+.ai-output {
+    white-space: pre-wrap; /* Ensures the AI output wraps properly */
+    background-color: #e8f8f8; /* Light background for the verdict box */
+    border: 2px solid #008080;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    text-align: left;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+/* Highlight the Confidence Score */
+.ai-output strong {
+    color: #e65200; /* Distinct color for emphasis (e.g., orange/red) */
+    font-weight: 900;
+    font-size: 1.2em;
+}
+
+/* --- Reference Image Styling --- */
+.reference-guide {
+    margin-top: 30px;
+}
+
+.reference-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 15px 0;
+}
+
+.disclaimer {
+    font-size: 0.85em;
+    color: #777;
+    margin-top: 30px;
+}
+
+.recommendation-note {
+    font-weight: bold;
+    color: #cc0000;
+}

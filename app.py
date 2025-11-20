@@ -8,16 +8,14 @@ import io
 app = Flask(__name__)
 
 # --- Gemini Configuration ---
-# The client will automatically pick up the GEMINI_API_KEY from Vercel's environment variables.
-# We include this definition block to ensure the 'client' variable is defined globally.
 try:
+    # Client Initialization. Vercel automatically finds the GEMINI_API_KEY environment variable.
     client = genai.Client()
 except Exception as e:
     print(f"Error initializing Gemini client: {e}")
     client = None
 
 # --- Gemini Prompt ---
-# The instructions for the model, forcing the required output format.
 GALL_ANALYSIS_PROMPT = """
 Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathology expert.
 
@@ -29,28 +27,40 @@ Crucially, format your final verdict on a single line using ONLY this exact stru
 """
 # -----------------------------
 
+def optimize_image(image: Image.Image) -> Image.Image:
+    """Resizes and compresses the image to prevent memory and timeout issues on Vercel."""
+    MAX_SIZE = (1024, 1024) # Maximum resolution
+    
+    # Resize the image if necessary
+    if image.width > MAX_SIZE[0] or image.height > MAX_SIZE[1]:
+        # Use LANCZOS for high-quality downsampling
+        image.thumbnail(MAX_SIZE, Image.Resampling.LANCZOS)
+    
+    # Convert image format to RGB (JPEG) for predictable compression if needed
+    if image.mode in ('RGBA', 'P', 'LA'):
+        image = image.convert('RGB')
+        
+    return image
+
+
 @app.route('/')
 def index():
-    """
-    Renders the main upload page (index.html). 
-    This is what the user sees when they first visit the site.
-    """
-    # FIX: Render index.html (the upload form) and do not use the undefined 'analysis_text'
+    """Renders the main upload page (index.html)."""
     return render_template('index.html')
 
 
 @app.route('/analyze', methods=['POST'])
 def analyze_tuber():
     """
-    Handles the image upload, calls the Gemini API for analysis, 
-    and redirects to the results page upon completion.
+    Handles the image upload, optimizes the image, calls the Gemini API, 
+    and redirects to the results page.
     """
+    # Check 1: AI Service Check
     if not client:
-        # In a production setup, this would return an error page, but we'll use a redirect for simplicity.
-        return redirect(url_for('results', analysis="ERROR: AI service not configured. Check GEMINI_API_KEY."))
+        return redirect(url_for('results', analysis="ERROR: AI service not configured. Check GEMINI_API_KEY environment variable."))
     
+    # Check 2: File Upload Check
     if 'photos' not in request.files:
-        # Redirect back to the form if no files were selected
         return redirect(url_for('index'))
 
     uploaded_files = request.files.getlist('photos')
@@ -61,49 +71,54 @@ def analyze_tuber():
     for file in uploaded_files:
         if file.filename != '':
             try:
-                # Read file content into memory and open as a PIL Image
-                img = Image.open(io.BytesIO(file.read()))
-                content.append(img)
+                # Read file content into memory
+                img_stream = io.BytesIO(file.read())
+                original_img = Image.open(img_stream)
+                
+                # CRITICAL IMPROVEMENT: Optimize image size before sending
+                optimized_img = optimize_image(original_img)
+                content.append(optimized_img)
+                
             except Exception as e:
                 # Log non-image file errors and skip
-                print(f"Skipping non-image file: {file.filename} Error: {e}")
+                print(f"Skipping non-image file or failed to process: {file.filename}. Error: {e}")
                 continue
 
     if len(content) == 1: # Only the prompt, no images
-        # Redirect back to the form if no valid images were submitted
         return redirect(url_for('index'))
         
     # --- 2. Call the Gemini API ---
     try:
+        # Added a 25-second timeout to handle Vercel's limits gracefully
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=content
+            contents=content,
+            timeout=25
         )
         analysis_text = response.text
         
         # --- 3. Redirect to the results page ---
-        # We redirect and pass the result as a URL parameter (using a session/database would be better 
-        # for very long text, but query parameter works for now).
         return redirect(url_for('results', analysis=analysis_text))
         
     except Exception as e:
-        error_message = f"Gemini API Error: {e}"
+        # Catch errors during the API call (network, timeout, quota)
+        error_message = f"Critical Error during AI Analysis: {type(e).__name__}: {str(e)}. Please check your Gemini API key and usage quota."
         print(error_message)
+        # Redirect to the results page showing the specific error
         return redirect(url_for('results', analysis=error_message))
 
 
 @app.route('/results')
 def results():
     """
-    Renders the results.html page using the analysis text passed via the query parameter.
+    Renders the results.html page, displaying analysis or error message.
     """
     # Get the analysis text from the URL query parameter 'analysis'
-    analysis_text = request.args.get('analysis', "No analysis found.")
+    analysis_text = request.args.get('analysis', "No analysis found. Please upload an image.")
     
-    # FIX: Render results.html, using the text from the URL parameter
     return render_template('results.html', result=analysis_text)
 
 
 if __name__ == '__main__':
-    # When testing locally, you need to set your GEMINI_API_KEY in your environment
+    # For local testing
     app.run(debug=True)
