@@ -97,8 +97,8 @@ def analyze_tuber():
         analysis_text = response.text
         
         # --- START RESPONSE CLEANUP AND FORMATTING ---
-        # 1. Remove the bold HTML tags (the Jinja filter handles bolding later)
-        analysis_text = analysis_text.replace('<strong>', '').replace('</strong>', '')
+        # 1. FIX: Use regex to remove ANY HTML tag (like <strong>, <b>, <em>) from the text.
+        analysis_text = re.sub(r'<[^>]+>', '', analysis_text)
 
         # 2. Extract the verdict line separately.
         verdict_match = re.search(r'\[VERDICT:.*?\]\s*\[CONFIDENCE:.*?%\]', analysis_text, re.DOTALL)
