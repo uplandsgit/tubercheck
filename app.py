@@ -89,11 +89,10 @@ def analyze_tuber():
         
     # --- 2. Call the Gemini API ---
     try:
-        # Added a 25-second timeout to handle Vercel's limits gracefully
+        # NOTE: Removed 'timeout=25' argument to fix TypeError/version incompatibility issue.
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=content,
-            timeout=25
+            contents=content
         )
         analysis_text = response.text
         
