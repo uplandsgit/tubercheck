@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from google import genai
 from PIL import Image
 import io
+import re # <-- New: Added import for regex
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -89,13 +90,28 @@ def analyze_tuber():
         
     # --- 2. Call the Gemini API ---
     try:
-        # NOTE: Removed 'timeout=25' argument to fix TypeError/version incompatibility issue.
+        # FIX: Removed 'timeout=25' argument to fix the TypeError.
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=content
         )
         analysis_text = response.text
         
+        # --- START RESPONSE CLEANUP (New Logic) ---
+        # 1. Remove the bold HTML tags (the Jinja filter in results.html handles bolding)
+        analysis_text = analysis_text.replace('<strong>', '').replace('</strong>', '')
+
+        # 2. Remove the structured headers/numbers/bolding from the prompt response
+        # This targets patterns like "1. **Identify Growths:** "
+        analysis_text = re.sub(r'^\d+\.\s+\*\*.*?\*\*:\s*', '', analysis_text, flags=re.MULTILINE)
+
+        # 3. Collapse all multiple spaces and newlines into a single clean paragraph, 
+        # then re-introduce a newline before the verdict for neat separation.
+        analysis_text = analysis_text.replace('\n', ' ').strip()
+        analysis_text = re.sub(r'\s+', ' ', analysis_text).strip()
+        analysis_text = analysis_text.replace('[VERDICT', '\n[VERDICT')
+        # --- END RESPONSE CLEANUP ---
+
         # --- 3. Redirect to the results page ---
         return redirect(url_for('results', analysis=analysis_text))
         
