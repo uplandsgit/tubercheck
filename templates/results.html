@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Verdict - Dahlia Gall Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+<body>
+    <div class="container">
+        <h1>🔍 Analysis Complete</h1>
+        <hr>
+
+        <section class="ai-verdict">
+            <h2>AI Diagnostic Verdict</h2>
+            <pre class="ai-output">{{ result }}</pre>
+            <p>Read the verdict and confidence score above carefully. If the confidence is low (e.g., below 70%), physical inspection is highly recommended.</p>
+        </section>
+
+        <hr>
+
+        <section class="reference-guide">
+            <h2>💡 Human-Assisted Visual Guide</h2>
+            <p>Use the reference image below to compare the suspicious areas on your tuber with definitive crown gall symptoms.</p>
+            
+            <div class="image-comparison">
+                <img src="{{ url_for('static', filename='images/gall_reference.jpg') }}" 
+                     alt="Reference image showing definitive crown gall on a dahlia tuber" 
+                     class="reference-image">
+            </div>
+
+            <p class="recommendation-note">
+                **Recommendation:** If the growths match the woody, irregular texture seen in the reference, the tuber should be discarded and the soil sanitized.
+            </p>
+        </section>
+
+        <a href="/" class="button">Analyze Another Tuber</a>
+    </div>
+</body>
+</html>

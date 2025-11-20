@@ -20,20 +20,17 @@ except Exception as e:
 GALL_ANALYSIS_PROMPT = """
 Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathology expert.
 
-1.  **Identify Growths:** Determine if there are any abnormal growths, tumors, or distorted tissue present.
-2.  **Compare to Gall Types:**
-    * **Crown Gall:** Look for irregular, woody, tumor-like, swollen masses of disorganized tissue, often near the crown.
-    * **Leafy Gall:** Look for dense, distorted, cauliflower-like masses of tiny, fused, and stumpy shoots, typically at the crown or eyes.
-    * **Lenticels:** Note if the growths appear to be natural, uniform, puffy lenticels (gas exchange pores) that are often white and scattered.
-3.  **Provide a Verdict:** Give a clear, concise verdict based on your analysis.
+1.  **Identify Growths:** Determine if there are any abnormal growths, tumors, or distorted tissue present, specifically looking for Crown Gall (Agrobacterium tumefaciens).
+2.  **Describe Findings:** Describe the visual evidence found. If no gall is present, describe the healthy appearance.
+3.  **Provide a Verdict:** Give a clear, concise final verdict.
 
-**Format your response as a single block of text containing the Verdict, Reasoning, and Recommendation, separated by newlines.**
+**Crucially, format your final verdict on a single line using ONLY this exact structure:** [VERDICT: Gall Present / Gall Not Present] [CONFIDENCE: X%]
 """
 
 @app.route('/')
 def index():
     """Renders the main upload page."""
-    return render_template('index.html')
+     return render_template('results.html', result=analysis_text)
 
 @app.route('/analyze', methods=['POST'])
 def analyze_tuber():
