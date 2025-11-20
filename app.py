@@ -30,7 +30,7 @@ Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathol
 @app.route('/')
 def index():
     """Renders the main upload page."""
-	return render_template('results.html', result=analysis_text)
+    return render_template('results.html', result=analysis_text)
 
 @app.route('/analyze', methods=['POST'])
 def analyze_tuber():
