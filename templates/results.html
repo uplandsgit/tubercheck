@@ -28,7 +28,7 @@
             <!-- Use Jinja to split the single result string into two parts based on the separator added in app.py -->
             {% set parts = result.split('---SEPARATOR---') %}
             {% set verdict_line = parts[0] if parts|length > 0 else 'Error: Verdict Missing' %}
-            {% set explanation_text = parts[1] if parts|length > 1 else 'Detailed analysis could not be retrieved. Check logs for API errors.' %}
+            {% set explanation_text = parts[1] if parts|length > 1 else 'No analysis data found in session. This can happen if you navigate directly or if the session timed out. Please go back and upload an image.' %}
             
             {# Determine the class based on the verdict text #}
             {% set verdict_class = 'verdict-error' %}

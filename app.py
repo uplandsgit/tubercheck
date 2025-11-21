@@ -8,6 +8,7 @@ import base64 # Import base64 for image encoding
 # Initialize Flask App
 app = Flask(__name__)
 # CRITICAL: Set a secret key for session management (required for using Flask session)
+# This key is essential for Flask to sign the session cookies securely.
 app.secret_key = 'your_super_secret_key_for_session_management' 
 
 # --- Gemini Configuration ---
@@ -69,10 +70,14 @@ def analyze_tuber():
     """
     # Check 1: AI Service Check
     if not client:
-        return redirect(url_for('results', analysis="ERROR: AI service not configured. Check GEMINI_API_KEY environment variable."))
+        # Improved error handling for service misconfiguration
+        error_msg = "[VERDICT: Error] [CONFIDENCE: 0%]---SEPARATOR---Critical Error: AI service not configured. Check GEMINI_API_KEY."
+        session['analysis_result'] = error_msg
+        return redirect(url_for('results'))
     
     # Check 2: File Upload Check
-    if 'photos' not in request.files:
+    if 'photos' not in request.files or not request.files.getlist('photos'):
+        # If no files were actually uploaded
         return redirect(url_for('index'))
 
     uploaded_files = request.files.getlist('photos')
@@ -101,7 +106,7 @@ def analyze_tuber():
                 print(f"Skipping non-image file or failed to process: {file.filename}. Error: {e}")
                 continue
 
-    if len(content) == 1: # Only the prompt, no images
+    if len(content) == 1: # Only the prompt, no usable images
         return redirect(url_for('index'))
         
     # Store the image data in the session
@@ -165,8 +170,11 @@ def results():
     Renders the results.html page, displaying analysis and the analyzed image.
     """
     # Retrieve the analysis text and image data from the session
-    # We use .pop() to retrieve and immediately remove the data from the session
-    analysis_text = session.pop('analysis_result', "No analysis found. Please upload an image.")
+    # Use .pop() to retrieve and immediately remove the data. 
+    # Provide a default result if the session is empty (e.g., direct navigation or timeout)
+    default_result = "[VERDICT: Error] [CONFIDENCE: 0%]---SEPARATOR---No analysis data found in session. This can happen if you navigate directly or if the session timed out. Please go back and upload an image."
+    
+    analysis_text = session.pop('analysis_result', default_result)
     analyzed_image_base64 = session.pop('analyzed_image', None)
     
     return render_template('results.html', 
