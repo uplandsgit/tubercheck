@@ -3,7 +3,7 @@ from google import genai
 from PIL import Image
 import io
 import re
-import base64 # Import base64 for image encoding (kept for optimization helper, but not used for session)
+import base64
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -13,7 +13,10 @@ app = Flask(__name__)
 app.secret_key = 'TuberCheck-AI-Secret-Key-76vbnmklo987jklpoiuytredfghjkl0987' 
 # ----------------------------------------------------------------------------------
 
+# MAX_SESSION_IMAGE_SIZE is now OBSOLETE as we remove image storage from session.
+
 # --- Gemini Configuration ---
+client = None
 try:
     # Client Initialization. Vercel automatically finds the GEMINI_API_KEY environment variable.
     client = genai.Client()
@@ -34,8 +37,12 @@ Crucially, format your final verdict on a single line using ONLY this exact stru
 # -----------------------------
 
 def optimize_image(image: Image.Image) -> Image.Image:
-    """Resizes and compresses the image to prevent memory and timeout issues on Vercel."""
-    MAX_SIZE = (1024, 1024) # Maximum resolution
+    """
+    Resizes and compresses the image for the Gemini API call. 
+    This is necessary to stay within API payload limits and prevent Vercel memory/timeout issues.
+    """
+    # Max size remains safe for the AI API payload
+    MAX_SIZE = (800, 800) 
     
     # Resize the image if necessary
     if image.width > MAX_SIZE[0] or image.height > MAX_SIZE[1]:
@@ -49,14 +56,7 @@ def optimize_image(image: Image.Image) -> Image.Image:
     return image
 
 
-def image_to_base64(image: Image.Image) -> str:
-    """Converts a PIL Image object to a Base64 string."""
-    buffer = io.BytesIO()
-    # Save as JPEG for better compression and consistent mime type
-    image.save(buffer, format="JPEG", quality=75) # Reduced quality for smaller size
-    img_str = base64.b64encode(buffer.getvalue()).decode()
-    return img_str
-
+# The image_to_base64 function is no longer needed since we are not displaying the uploaded image.
 
 @app.route('/')
 def index():
@@ -67,54 +67,45 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze_tuber():
     """
-    Handles the image upload, optimizes the image, calls the Gemini API, 
-    and redirects to the results page.
+    Handles the image upload, optimizes the image for AI, calls the Gemini API, 
+    and redirects to the results page, skipping image storage in session.
     """
     # Check 1: AI Service Check
     if not client:
-        # Improved error handling for service misconfiguration
         error_msg = "[VERDICT: Error] [CONFIDENCE: 0%]---SEPARATOR---Critical Error: AI service not configured. Check GEMINI_API_KEY."
         session['analysis_result'] = error_msg
         return redirect(url_for('results'))
     
     # Check 2: File Upload Check
     if 'photos' not in request.files or not request.files.getlist('photos'):
-        # If no files were actually uploaded
         return redirect(url_for('index'))
 
     uploaded_files = request.files.getlist('photos')
     
-    # --- 1. Prepare Content for Gemini API and store first image in Base64 ---
+    # --- 1. Prepare Content for Gemini API ---
     content = [GALL_ANALYSIS_PROMPT]
-    base64_image_data = None # Variable to hold the base64 string for display
     
     for file in uploaded_files:
         if file.filename != '':
             try:
-                # Read file content into memory
-                file.stream.seek(0) # IMPORTANT: Reset stream pointer for consistent reading
+                file.stream.seek(0) # IMPORTANT: Reset stream pointer
                 img_stream = io.BytesIO(file.read())
                 original_img = Image.open(img_stream)
                 
-                # CRITICAL IMPROVEMENT: Optimize image size before sending
+                # Optimize image size for API only
                 optimized_img = optimize_image(original_img)
                 content.append(optimized_img)
                 
-                # Store the *first* optimized image as Base64 for display
-                if base64_image_data is None:
-                    base64_image_data = image_to_base64(optimized_img)
-                
             except Exception as e:
-                # Log non-image file errors and skip
                 print(f"Skipping non-image file or failed to process: {file.filename}. Error: {e}")
                 continue
 
     if len(content) == 1: # Only the prompt, no usable images
         return redirect(url_for('index'))
         
-    # CRITICAL FIX: Re-enable the storage of the Base64 image data in the session
-    session['analyzed_image'] = base64_image_data
-        
+    # --- CRITICAL FIX: SKIP IMAGE STORAGE IN SESSION TO AVOID CRASHES ---
+    # We no longer store analyzed_image in the session.
+    
     # --- 2. Call the Gemini API ---
     try:
         response = client.models.generate_content(
@@ -152,16 +143,13 @@ def analyze_tuber():
         
         # --- END RESPONSE CLEANUP AND FORMATTING ---
 
-        # --- 3. Redirect to the results page ---
         # Store the analysis result in the session
         session['analysis_result'] = final_result
         return redirect(url_for('results'))
         
     except Exception as e:
-        # Catch errors during the API call (network, timeout, quota)
-        error_message = f"Critical Error during AI Analysis: {type(e).__name__}: {str(e)}. Please check your Gemini API key and usage quota."
+        error_message = f"Critical Error during AI Analysis: {type(e).__name__}: {str(e)}. This may indicate a network issue or an API rate limit. Please try again."
         print(error_message)
-        # Store the error message in the session
         session['analysis_result'] = f"[VERDICT: Error] [CONFIDENCE: 0%]---SEPARATOR---{error_message}"
         return redirect(url_for('results'))
 
@@ -176,9 +164,13 @@ def results():
     
     analysis_text = session.pop('analysis_result', default_result)
     
-    # CRITICAL FIX: Re-enable retrieval of the image data from the session
-    analyzed_image_base64 = session.pop('analyzed_image', None)
+    # CRITICAL FIX: analyzed_image is always None now, as we stopped storing it to ensure stability.
+    analyzed_image_base64 = None 
+    
+    # We no longer need to check for the [IMAGE_TOO_LARGE] flag.
     
     return render_template('results.html', 
                            result=analysis_text,
-                           analyzed_image=analyzed_image_base64) # Pass the image data to the template
+                           analyzed_image=analyzed_image_base64,
+                           # Pass a simple flag to show a message about the image not being displayed
+                           display_skipped=True)

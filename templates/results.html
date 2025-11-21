@@ -13,21 +13,15 @@
 
         <section class="ai-verdict">
             
-            <!-- SECTION 1: DISPLAY ANALYZED IMAGE - RE-ENABLED -->
-            {% if analyzed_image %}
+            <!-- SECTION 1: DISPLAY ANALYZED IMAGE - REMOVED DUE TO SIZE CONSTRAINTS -->
             <div class="analyzed-image-container">
-                <h3>Image Analyzed</h3>
-                <!-- Display the Base64 image data -->
-                <img src="data:image/jpeg;base64,{{ analyzed_image }}" 
-                     alt="Tuber submitted for analysis" 
-                     class="analyzed-image">
+                <h3>Image Submitted for Analysis</h3>
+                <!-- Simple message replacing the image display -->
+                <p class="recommendation-note error-message">
+                    For system stability when handling large images, the uploaded image cannot be displayed here. The AI analysis proceeded using a high-quality, compressed version of your file.
+                </p>
             </div>
             <hr>
-            {% else %}
-            <!-- Fallback message if image retrieval fails -->
-            <p class="recommendation-note">Note: Could not retrieve the image for display due to file size constraints.</p>
-            <hr>
-            {% endif %}
 
             <!-- Use Jinja to split the single result string into two parts based on the separator added in app.py -->
             {% set parts = result.split('---SEPARATOR---') %}
