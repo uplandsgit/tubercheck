@@ -13,16 +13,6 @@
 
         <section class="ai-verdict">
             
-            <!-- SECTION 1: DISPLAY ANALYZED IMAGE - REMOVED DUE TO SIZE CONSTRAINTS -->
-            <div class="analyzed-image-container">
-                <h3>Image Submitted for Analysis</h3>
-                <!-- Simple message replacing the image display -->
-                <p class="recommendation-note error-message">
-                    For system stability when handling large images, the uploaded image cannot be displayed here. The AI analysis proceeded using a high-quality, compressed version of your file.
-                </p>
-            </div>
-            <hr>
-
             <!-- Use Jinja to split the single result string into two parts based on the separator added in app.py -->
             {% set parts = result.split('---SEPARATOR---') %}
             {% set verdict_line = parts[0] if parts|length > 0 else 'Error: Verdict Missing' %}
@@ -35,6 +25,25 @@
             {% elif 'Gall Disease Not Present' in verdict_line %}
                 {% set verdict_class = 'verdict-not-present' %}
             {% endif %}
+
+            <!-- SECTION 1: IMAGE STATUS - ONLY SHOW MESSAGE IF ANALYSIS FAILED (verdict_class == 'verdict-error') -->
+            <div class="analyzed-image-container">
+                <h3>Image Submitted for Analysis</h3>
+                
+                {% if verdict_class == 'verdict-error' %}
+                    <!-- Show error message if the analysis itself failed. -->
+                    <p class="recommendation-note error-message">
+                        The AI analysis failed to run or returned an error. Please check the Detailed Findings section for specific error details.
+                    </p>
+                {% else %}
+                    <!-- If analysis succeeded, simply inform the user the image was processed without displaying the stability disclaimer. -->
+                    <p class="disclaimer">
+                        Image submitted successfully and processed by AI.
+                    </p>
+                {% endif %}
+            </div>
+            <hr>
+
 
             {# Wrap the CONFIDENCE part in a class for styling (black color) #}
             {% set wrapped_verdict = verdict_line | replace('[CONFIDENCE:', '<span class="confidence-score">[CONFIDENCE:') | replace('%]', '%]</span>') %}
