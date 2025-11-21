@@ -32,6 +32,12 @@ h2 {
     margin-top: 0;
 }
 
+h3 {
+    color: #384047;
+    font-size: 1.2em;
+    margin-top: 0;
+}
+
 hr {
     border: 0;
     height: 1px;
@@ -117,6 +123,19 @@ input[type="file"] {
 
 .custom-file-upload:hover {
     background-color: #e8f8f8;
+}
+
+/* NEW: Analyzed Image Display */
+.analyzed-image-container {
+    margin-bottom: 20px;
+}
+
+.analyzed-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 15px;
 }
 
 /* NEW: Prominent Verdict Box at the top */

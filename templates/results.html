@@ -12,6 +12,19 @@
         <hr>
 
         <section class="ai-verdict">
+            
+            <!-- SECTION 1: DISPLAY ANALYZED IMAGE -->
+            {% if analyzed_image %}
+            <div class="analyzed-image-container">
+                <h3>Image Analyzed</h3>
+                <!-- Display the Base64 image data -->
+                <img src="data:image/jpeg;base64,{{ analyzed_image }}" 
+                     alt="Tuber submitted for analysis" 
+                     class="analyzed-image">
+            </div>
+            <hr>
+            {% endif %}
+
             <!-- Use Jinja to split the single result string into two parts based on the separator added in app.py -->
             {% set parts = result.split('---SEPARATOR---') %}
             {% set verdict_line = parts[0] if parts|length > 0 else 'Error: Verdict Missing' %}

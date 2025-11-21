@@ -1,11 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session # Added session
 from google import genai
 from PIL import Image
 import io
 import re
+import base64 # Import base64 for image encoding
 
 # Initialize Flask App
 app = Flask(__name__)
+# CRITICAL: Set a secret key for session management (required for using Flask session)
+app.secret_key = 'your_super_secret_key_for_session_management' 
 
 # --- Gemini Configuration ---
 try:
@@ -43,6 +46,15 @@ def optimize_image(image: Image.Image) -> Image.Image:
     return image
 
 
+def image_to_base64(image: Image.Image) -> str:
+    """Converts a PIL Image object to a Base64 string."""
+    buffer = io.BytesIO()
+    # Save as JPEG for better compression and consistent mime type
+    image.save(buffer, format="JPEG") 
+    img_str = base64.b64encode(buffer.getvalue()).decode()
+    return img_str
+
+
 @app.route('/')
 def index():
     """Renders the main upload page (index.html)."""
@@ -65,8 +77,9 @@ def analyze_tuber():
 
     uploaded_files = request.files.getlist('photos')
     
-    # --- 1. Prepare Content for Gemini API ---
+    # --- 1. Prepare Content for Gemini API and store first image in Base64 ---
     content = [GALL_ANALYSIS_PROMPT]
+    base64_image_data = None
     
     for file in uploaded_files:
         if file.filename != '':
@@ -79,6 +92,10 @@ def analyze_tuber():
                 optimized_img = optimize_image(original_img)
                 content.append(optimized_img)
                 
+                # Store the *first* optimized image as Base64 for display
+                if base64_image_data is None:
+                    base64_image_data = image_to_base64(optimized_img)
+                    
             except Exception as e:
                 # Log non-image file errors and skip
                 print(f"Skipping non-image file or failed to process: {file.filename}. Error: {e}")
@@ -86,6 +103,9 @@ def analyze_tuber():
 
     if len(content) == 1: # Only the prompt, no images
         return redirect(url_for('index'))
+        
+    # Store the image data in the session
+    session['analyzed_image'] = base64_image_data
         
     # --- 2. Call the Gemini API ---
     try:
@@ -126,25 +146,32 @@ def analyze_tuber():
         # --- END RESPONSE CLEANUP AND FORMATTING ---
 
         # --- 3. Redirect to the results page ---
-        return redirect(url_for('results', analysis=final_result))
+        # Store the analysis result in the session instead of query param for cleaner URL
+        session['analysis_result'] = final_result
+        return redirect(url_for('results'))
         
     except Exception as e:
         # Catch errors during the API call (network, timeout, quota)
         error_message = f"Critical Error during AI Analysis: {type(e).__name__}: {str(e)}. Please check your Gemini API key and usage quota."
         print(error_message)
-        # Redirect to the results page showing the specific error
-        return redirect(url_for('results', analysis=error_message))
+        # Store the error message in the session
+        session['analysis_result'] = f"[VERDICT: Error] [CONFIDENCE: 0%]---SEPARATOR---{error_message}"
+        return redirect(url_for('results'))
 
 
 @app.route('/results')
 def results():
     """
-    Renders the results.html page, displaying analysis or error message.
+    Renders the results.html page, displaying analysis and the analyzed image.
     """
-    # Get the analysis text from the URL query parameter 'analysis'
-    analysis_text = request.args.get('analysis', "No analysis found. Please upload an image.")
+    # Retrieve the analysis text and image data from the session
+    # We use .pop() to retrieve and immediately remove the data from the session
+    analysis_text = session.pop('analysis_result', "No analysis found. Please upload an image.")
+    analyzed_image_base64 = session.pop('analyzed_image', None)
     
-    return render_template('results.html', result=analysis_text)
+    return render_template('results.html', 
+                           result=analysis_text, 
+                           analyzed_image=analyzed_image_base64)
 
 
 if __name__ == '__main__':
