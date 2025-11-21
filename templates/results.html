@@ -17,12 +17,25 @@
             {% set verdict_line = parts[0] if parts|length > 0 else 'Error: Verdict Missing' %}
             {% set explanation_text = parts[1] if parts|length > 1 else 'Detailed analysis could not be retrieved. Check logs for API errors.' %}
             
+            {# Determine the class based on the verdict text #}
+            {% set verdict_class = 'verdict-error' %}
+            {% if 'Gall Disease Present' in verdict_line %}
+                {% set verdict_class = 'verdict-present' %}
+            {% elif 'Gall Disease Not Present' in verdict_line %}
+                {% set verdict_class = 'verdict-not-present' %}
+            {% endif %}
+
+            {# Wrap the CONFIDENCE part in a class for styling (black color) #}
+            {% set wrapped_verdict = verdict_line | replace('[CONFIDENCE:', '<span class="confidence-score">[CONFIDENCE:') | replace('%]', '%]</span>') %}
+
             <!-- VERDICT DISPLAY (Prominent Box at the top) -->
             <div class="verdict-box">
                 <h2>Diagnostic Verdict</h2>
-                <!-- FIX: Added | safe filter. This prevents Jinja from escaping the <strong> tags, 
-                     allowing the browser to render them as HTML and show the bold confidence score. -->
-                <p>{{ verdict_line | replace('[CONFIDENCE', '<strong>[CONFIDENCE') | replace('%]', '%]</strong>') | safe }}</p>
+                
+                {# Apply the dynamic class to the paragraph tag to change the status color #}
+                <p class="{{ verdict_class }}">
+                    {{ wrapped_verdict | safe }}
+                </p>
             </div>
 
             <!-- DETAILED EXPLANATION SECTION -->
@@ -30,7 +43,7 @@
             <p>The AI performed a visual inspection. Please check the confidence score and the findings below carefully.</p>
             
             <!-- Explanation Text (cleaned and formatted in app.py) -->
-            <div class="ai-output">{{ explanation_text }}</div>
+            <div class="ai-output">{{ explanation_text | safe }}</div>
 
             <p class="recommendation-note">
                 If the verdict is 'Gall Present' or the confidence is low (below 70%), proceed with caution and a physical inspection.

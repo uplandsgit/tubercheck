@@ -127,15 +127,33 @@ input[type="file"] {
     border-radius: 12px;
     margin-bottom: 30px;
     font-size: 1.4em;
-    font-weight: bold;
     color: #004d4d;
     text-align: center;
 }
 
-.verdict-box strong {
-    color: #e65200; /* Distinct color for emphasis (e.g., orange/red) */
-    font-weight: 900;
+/* NEW: Base style for the verdict text */
+.verdict-box p {
+    font-weight: bold;
     font-size: 1.1em;
+}
+
+/* NEW: Verdict Status Colors (applied via dynamic class) */
+.verdict-present {
+    color: #cc0000; /* Red for Gall Present */
+}
+
+.verdict-not-present {
+    color: #008000; /* Green for Gall Not Present */
+}
+
+.verdict-error {
+    color: #e65200; /* Orange for Error */
+}
+
+/* NEW: Confidence Score Color (overrides the parent status color) */
+.confidence-score {
+    color: #000000; /* Black for confidence score */
+    font-weight: 900;
 }
 
 /* --- AI Output Styling (results.html) --- */
@@ -161,7 +179,6 @@ input[type="file"] {
     margin-bottom: 5px; /* Keep it close to the text */
 }
 
-/* We don't need this rule anymore as verdict is separate, but keeping for safety override */
 .ai-output strong {
     font-weight: normal; 
     color: inherit;
@@ -192,7 +209,7 @@ input[type="file"] {
     color: #cc0000;
 }
 
-/* --- SPINNER & LOADING STYLES (NEW) --- */
+/* --- SPINNER & LOADING STYLES --- */
 .spinner {
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-top: 3px solid #fff;
