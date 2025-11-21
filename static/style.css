@@ -50,6 +50,11 @@ hr {
     font-size: 1em;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.1s ease;
+    /* Ensure button content is aligned for spinner */
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Space between text and spinner */
 }
 
 .primary-button {
@@ -57,9 +62,16 @@ hr {
     color: white;
 }
 
-.primary-button:hover {
+.primary-button:hover:not(:disabled) { /* Use :not(:disabled) to prevent hover effect when loading */
     background-color: #006666;
     transform: translateY(-1px);
+}
+
+/* Style for the disabled button state (when analyzing) */
+.primary-button:disabled {
+    background-color: #006666; /* Slightly darker */
+    cursor: not-allowed;
+    opacity: 0.8;
 }
 
 .secondary-button {
@@ -140,6 +152,15 @@ input[type="file"] {
     white-space: pre-wrap; /* Keeps paragraphs separate */
 }
 
+/* NEW STYLES for the section headers inside the detailed findings (H4 tags inserted by app.py) */
+.ai-output h4 {
+    color: #008080; /* Theme color */
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-top: 15px; /* Add some space above the header */
+    margin-bottom: 5px; /* Keep it close to the text */
+}
+
 /* We don't need this rule anymore as verdict is separate, but keeping for safety override */
 .ai-output strong {
     font-weight: normal; 
@@ -169,4 +190,25 @@ input[type="file"] {
 .recommendation-note {
     font-weight: bold;
     color: #cc0000;
+}
+
+/* --- SPINNER & LOADING STYLES (NEW) --- */
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

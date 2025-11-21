@@ -26,7 +26,11 @@
             <!-- NEW: Area to display the selected file names -->
             <div id="file-names-display" class="file-names-area">No file selected.</div>
 
-            <button type="submit" class="button primary-button">Submit for AI Analysis</button>
+            <!-- MODIFIED: Button now has an ID and content for dynamic updates -->
+            <button type="submit" id="analyze-button" class="button primary-button">
+                <span id="button-text">Submit for AI Analysis</span>
+                <span id="loading-spinner" class="spinner hidden"></span>
+            </button>
         </form>
 
         <hr>
@@ -37,7 +41,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('photos');
             const displayArea = document.getElementById('file-names-display');
+            const form = document.querySelector('.upload-form');
+            const analyzeButton = document.getElementById('analyze-button');
+            const buttonText = document.getElementById('button-text');
+            const spinner = document.getElementById('loading-spinner');
 
+            // File selection display logic
             fileInput.addEventListener('change', function() {
                 if (this.files.length > 0) {
                     let fileNames = Array.from(this.files).map(file => file.name);
@@ -52,6 +61,17 @@
                     displayArea.textContent = 'No file selected.';
                     displayArea.style.color = '#777';
                 }
+            });
+
+            // Form submission loading status logic
+            form.addEventListener('submit', function() {
+                // Check if files are selected before showing loading state
+                if (fileInput.files.length > 0) {
+                    analyzeButton.disabled = true;
+                    buttonText.textContent = 'Analyzing Image...';
+                    spinner.classList.remove('hidden');
+                }
+                // The form will submit automatically after this function completes
             });
         });
     </script>
