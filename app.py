@@ -15,15 +15,15 @@ except Exception as e:
     print(f"Error initializing Gemini client: {e}")
     client = None
 
-# --- Gemini Prompt (Removed 'Provide a Verdict:' from the bolded list) ---
+# --- Gemini Prompt (Updated to look for both Crown Gall and Leafy Gall) ---
 GALL_ANALYSIS_PROMPT = """
 Analyze the attached image(s) of a dahlia tuber. Act as a certified plant pathology expert. 
 Your response must consist only of the analysis and the final verdict line.
 
-**Identify Growths:** Determine if there are any abnormal growths, tumors, or distorted tissue present, specifically looking for Crown Gall (Agrobacterium tumefaciens).
-**Describe Findings:** Describe the visual evidence found. If no gall is present, describe the healthy appearance.
+**Identify Growths:** Determine if there are any abnormal growths, tumors, or distorted tissue present, specifically looking for signs of Crown Gall (Agrobacterium tumefaciens) and Leafy Gall (Rhodococcus fascians).
+**Describe Findings:** Describe the visual evidence found, noting if the growths are hard and tumor-like (Crown Gall) or bushy and distorted (Leafy Gall). If no gall is present, describe the healthy appearance.
 
-Crucially, format your final verdict on a single line using ONLY this exact structure: [VERDICT: Gall Present / Gall Not Present] [CONFIDENCE: X%]
+Crucially, format your final verdict on a single line using ONLY this exact structure: [VERDICT: Gall Disease Present / Gall Disease Not Present] [CONFIDENCE: X%]
 """
 # -----------------------------
 
@@ -100,6 +100,7 @@ def analyze_tuber():
         analysis_text = re.sub(r'<[^>]+>', '', analysis_text)
 
         # 2. Extract the verdict line separately.
+        # Note: The verdict structure now accommodates "Gall Disease Present / Gall Disease Not Present"
         verdict_match = re.search(r'\[VERDICT:.*?\]\s*\[CONFIDENCE:.*?%\]', analysis_text, re.DOTALL)
         verdict_line = verdict_match.group(0).strip() if verdict_match else "[VERDICT: Error] [CONFIDENCE: 0%]"
         
