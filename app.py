@@ -50,10 +50,10 @@ def optimize_image(image: Image.Image) -> Image.Image:
 
 
 def image_to_base64(image: Image.Image) -> str:
-    """Converts a PIL Image object to a Base64 string. (Function kept but not used for session)"""
+    """Converts a PIL Image object to a Base64 string."""
     buffer = io.BytesIO()
     # Save as JPEG for better compression and consistent mime type
-    image.save(buffer, format="JPEG") 
+    image.save(buffer, format="JPEG", quality=75) # Reduced quality for smaller size
     img_str = base64.b64encode(buffer.getvalue()).decode()
     return img_str
 
@@ -84,13 +84,15 @@ def analyze_tuber():
 
     uploaded_files = request.files.getlist('photos')
     
-    # --- 1. Prepare Content for Gemini API ---
+    # --- 1. Prepare Content for Gemini API and store first image in Base64 ---
     content = [GALL_ANALYSIS_PROMPT]
+    base64_image_data = None # Variable to hold the base64 string for display
     
     for file in uploaded_files:
         if file.filename != '':
             try:
                 # Read file content into memory
+                file.stream.seek(0) # IMPORTANT: Reset stream pointer for consistent reading
                 img_stream = io.BytesIO(file.read())
                 original_img = Image.open(img_stream)
                 
@@ -98,8 +100,9 @@ def analyze_tuber():
                 optimized_img = optimize_image(original_img)
                 content.append(optimized_img)
                 
-                # NOTE: The Base64 image encoding and session storage logic was removed here
-                # to fix the Vercel 500 error caused by large session data.
+                # Store the *first* optimized image as Base64 for display
+                if base64_image_data is None:
+                    base64_image_data = image_to_base64(optimized_img)
                 
             except Exception as e:
                 # Log non-image file errors and skip
@@ -108,6 +111,9 @@ def analyze_tuber():
 
     if len(content) == 1: # Only the prompt, no usable images
         return redirect(url_for('index'))
+        
+    # CRITICAL FIX: Re-enable the storage of the Base64 image data in the session
+    session['analyzed_image'] = base64_image_data
         
     # --- 2. Call the Gemini API ---
     try:
@@ -163,15 +169,16 @@ def analyze_tuber():
 @app.route('/results')
 def results():
     """
-    Renders the results.html page, displaying analysis.
-    The analyzed image display feature has been removed to fix the Vercel 500 error 
-    caused by storing large Base64 data in the Flask session cookie.
+    Renders the results.html page, displaying analysis and the analyzed image.
     """
     # Use .pop() to retrieve and immediately remove the data. 
-    default_result = "[VERDICT: Error] [CONFIDENCE: 0%]---SEPARATOR---No analysis data found in session. This can happen if you navigate directly or if the session timed out. The image display feature has been temporarily removed to fix a critical server error (500). Please go back and upload an image."
+    default_result = "[VERDICT: Error] [CONFIDENCE: 0%]---SEPARATOR---No analysis data found in session. This can happen if you navigate directly or if the session timed out. Please go back and upload an image."
     
     analysis_text = session.pop('analysis_result', default_result)
-    # Removed: analyzed_image_base64 = session.pop('analyzed_image', None)
+    
+    # CRITICAL FIX: Re-enable retrieval of the image data from the session
+    analyzed_image_base64 = session.pop('analyzed_image', None)
     
     return render_template('results.html', 
-                           result=analysis_text)
+                           result=analysis_text,
+                           analyzed_image=analyzed_image_base64) # Pass the image data to the template

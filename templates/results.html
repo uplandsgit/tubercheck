@@ -13,7 +13,7 @@
 
         <section class="ai-verdict">
             
-            <!-- SECTION 1: DISPLAY ANALYZED IMAGE -->
+            <!-- SECTION 1: DISPLAY ANALYZED IMAGE - RE-ENABLED -->
             {% if analyzed_image %}
             <div class="analyzed-image-container">
                 <h3>Image Analyzed</h3>
@@ -22,6 +22,10 @@
                      alt="Tuber submitted for analysis" 
                      class="analyzed-image">
             </div>
+            <hr>
+            {% else %}
+            <!-- Fallback message if image retrieval fails -->
+            <p class="recommendation-note">Note: Could not retrieve the image for display due to file size constraints.</p>
             <hr>
             {% endif %}
 
